@@ -1,0 +1,7 @@
+resolver: lts-20.24 # GHC 9.2.7
+packages:
+- hsc2hs-test
+
+docker:
+  enable: false
+  repo: fpco/alpine-haskell-stack:9.2.7

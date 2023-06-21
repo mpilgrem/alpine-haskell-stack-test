@@ -1,0 +1,33 @@
+name:                hsc2hs-test
+version:             0.1.0.0
+github:              "mpilgrem/alpine-haskell-stack-test"
+license:             BSD3
+author:              "Mike Pilgrem"
+maintainer:          "public@pilgrem.com"
+copyright:           "Copyright 2023 Mike Pilgrem. All rights reserved."
+
+description:         Please see the README on GitHub at <https://github.com/mpilgrem/alpine-haskell-stack-test#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- clock
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+executables:
+  foo:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
