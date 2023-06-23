@@ -1,4 +1,4 @@
-name:                hsc2hs-test
+name:                th-test
 version:             0.1.0.0
 github:              "mpilgrem/alpine-haskell-stack-test"
 license:             BSD3
@@ -10,7 +10,8 @@ description:         Please see the README on GitHub at <https://github.com/mpil
 
 dependencies:
 - base >= 4.7 && < 5
-- clock
+- process
+- template-haskell
 
 ghc-options:
 - -Wall
@@ -24,7 +25,7 @@ ghc-options:
 - -Wredundant-constraints
 
 executables:
-  hsc2hs-test:
+  th-test:
     main:                Main.hs
     source-dirs:         app
     ghc-options:

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           hsc2hs-test
+name:           th-test
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/mpilgrem/alpine-haskell-stack-test#readme>
 homepage:       https://github.com/mpilgrem/alpine-haskell-stack-test#readme
@@ -19,14 +19,16 @@ source-repository head
   type: git
   location: https://github.com/mpilgrem/alpine-haskell-stack-test
 
-executable hsc2hs-test
+executable th-test
   main-is: Main.hs
   other-modules:
-      Paths_hsc2hs_test
+      Lib
+      Paths_th_test
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , clock
+    , process
+    , template-haskell
   default-language: Haskell2010

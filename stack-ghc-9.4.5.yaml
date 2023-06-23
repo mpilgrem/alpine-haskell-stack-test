@@ -1,6 +1,7 @@
 resolver: lts-21.0 # GHC 9.4.5
 packages:
 - hsc2hs-test
+- th-test
 
 docker:
   enable: false
