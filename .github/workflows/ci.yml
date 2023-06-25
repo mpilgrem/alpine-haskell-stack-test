@@ -16,9 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ghc:
-        - "9.2.7"
-        - "9.4.5"
+        include:
+        - ghc: "9.2.7"
+          nix-cc: "/nix/store/hx7djyc7ll74gj0ansrs92p59n7y2578-gcc-wrapper-12.2.0/bin/cc"
+        - ghc: "9.4.5"
+          nix-cc: "/nix/store/lb6ppdjg4wrpzdk994pnp53xhjrn53qa-gcc-wrapper-12.3.0/bin/cc"
     steps:
     - name: Clone project
       uses: actions/checkout@v3
@@ -47,9 +49,17 @@ jobs:
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- apk list -I
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which hsc2hs
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --version
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which cc
 
         # Try applying hsc2hs directly
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --verbose simple-hsc2hs-test/app/Lib.hsc
+        # Tidy-up
+        rm simple-hsc2hs-test/app/Lib.hs
+
+        # Try applying hsc2hs directly with the `cc` apparently used by Cabal (the library)
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --verbose --cc=${{ matrix.nix-cc }} simple-hsc2hs-test/app/Lib.hsc
+        # Tidy-up
+        rm simple-hsc2hs-test/app/Lib.hs
 
         stack --verbose --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build simple-hsc2hs-test --cabal-verbose
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build hsc2hs-test
