@@ -42,6 +42,7 @@ jobs:
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- cat /etc/os-release
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- apk list -I
 
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build simple-hsc2hs-test
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build hsc2hs-test
 
         set +ex
