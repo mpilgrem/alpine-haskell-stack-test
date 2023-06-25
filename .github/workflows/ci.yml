@@ -35,12 +35,17 @@ jobs:
         extra-lib-dirs:
         - /lib
         - /usr/lib
+        configure-options:
+          simple-hsc2hs-test:
+          - --hsc2hs-option=--verbose
         EOF
 
         # Understand the build environment. `stack exec` is one of the
         # subcommands that automatically launches in a Docker container.
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- cat /etc/os-release
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- apk list -I
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which hsc2hs
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --version
 
         stack --verbose --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build simple-hsc2hs-test --cabal-verbose
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build hsc2hs-test
