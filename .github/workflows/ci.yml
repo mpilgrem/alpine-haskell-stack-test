@@ -50,6 +50,8 @@ jobs:
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which hsc2hs
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --version
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which cc
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- cc --version
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- ${{ matrix.nix-cc }} --version
 
         # Try applying hsc2hs directly
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --verbose simple-hsc2hs-test/app/Lib.hsc
