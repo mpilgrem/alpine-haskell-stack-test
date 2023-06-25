@@ -19,8 +19,10 @@ jobs:
         include:
         - ghc: "9.2.7"
           nix-cc: "/nix/store/hx7djyc7ll74gj0ansrs92p59n7y2578-gcc-wrapper-12.2.0/bin/cc"
+          cabal-tmp-dir: ".stack-work/dist/x86_64-linux-dk4f31dc93c12465b48238129ec7324625/Cabal-3.6.3.0/build/simple-hsc2hs-test/simple-hsc2hs-test-tmp"
         - ghc: "9.4.5"
           nix-cc: "/nix/store/lb6ppdjg4wrpzdk994pnp53xhjrn53qa-gcc-wrapper-12.3.0/bin/cc"
+          cabal-tmp-dir: ".stack-work/dist/x86_64-linux-dkbbc7701fbbddb5591b4899472412e28d/Cabal-3.8.1.0/build/simple-hsc2hs-test/simple-hsc2hs-test-tmp"
     steps:
     - name: Clone project
       uses: actions/checkout@v3
@@ -41,6 +43,7 @@ jobs:
         configure-options:
           simple-hsc2hs-test:
           - --hsc2hs-option=--verbose
+          - --hsc2hs-option=--keep-files
         EOF
 
         # Understand the build environment. `stack exec` is one of the
@@ -64,6 +67,10 @@ jobs:
         rm simple-hsc2hs-test/app/Lib.hs
 
         stack --verbose --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build simple-hsc2hs-test --cabal-verbose
+
+        cat simple-hsc2hs-test/${{ matrix.cabal-tmp-dir }}/Lib_hsc_make.c
+        cat simple-hsc2hs-test/${{ matrix.cabal-tmp-dir }}/Lib_hsc_utils.c
+
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build hsc2hs-test
 
         set +ex
