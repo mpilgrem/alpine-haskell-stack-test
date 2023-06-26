@@ -63,7 +63,7 @@ jobs:
         rm simple-hsc2hs-test/app/Lib.hs
 
         # Try applying hsc2hs directly with the `cc` apparently used by Cabal (the library)
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --lflag=-L/lib --lflag=-L/usr/lib --lflag=-Wl,-R,/lib --lflag=-Wl,-R,/usr/lib --lflag=-lgmp --verbose --cc=${{ matrix.nix-cc }} --ld=${{ matrix.nix-cc }} simple-hsc2hs-test/app/Lib.hsc
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --lflag=-L/lib --lflag=-L/usr/lib --lflag=-Wl,-R,/lib --lflag=-Wl,-R,/usr/lib --verbose --cc=${{ matrix.nix-cc }} --ld=${{ matrix.nix-cc }} simple-hsc2hs-test/app/Lib.hsc
         # Tidy-up
         rm simple-hsc2hs-test/app/Lib.hs
 
