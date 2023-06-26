@@ -10,8 +10,11 @@ on:
 # As at 21 June 2023, GitHub hosted runners supply GHC 9.6.2.
 
 jobs:
-  test-ci:
-    name: Test CI
+
+  # This job applies hsc2hs directly to a simple Lib.hsc file, in a Docker
+  # container.
+  test-hsc2hs-direct:
+    name: Test hsc2hs (direct)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -19,9 +22,60 @@ jobs:
         include:
         - ghc: "9.2.7"
           nix-cc: "/nix/store/hx7djyc7ll74gj0ansrs92p59n7y2578-gcc-wrapper-12.2.0/bin/cc"
-          cabal-tmp-dir: ".stack-work/dist/x86_64-linux-dk4f31dc93c12465b48238129ec7324625/Cabal-3.6.3.0/build/simple-hsc2hs-test/simple-hsc2hs-test-tmp"
         - ghc: "9.4.5"
           nix-cc: "/nix/store/lb6ppdjg4wrpzdk994pnp53xhjrn53qa-gcc-wrapper-12.3.0/bin/cc"
+    steps:
+    - name: Clone project
+      uses: actions/checkout@v3
+    - name: Install and run
+      shell: bash
+      run: |
+        set -ex
+
+        mkdir -p ~/.stack
+        touch ~/.stack/config.yaml
+        cat > ~/.stack/config.yaml <<EOF
+        extra-include-dirs:
+        - /usr/include
+        extra-lib-dirs:
+        - /lib
+        - /usr/lib
+        EOF
+
+        # Understand the build environment. `stack exec` is one of the
+        # subcommands that automatically launches in a Docker container.
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- cat /etc/os-release
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- apk list -I
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which hsc2hs
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --version
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which cc
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- cc --version
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- ${{ matrix.nix-cc }} --version
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- ls -l /usr/lib
+
+        # Try applying hsc2hs directly
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --verbose simple-hsc2hs-test/app/Lib.hsc
+        # Tidy-up
+        rm simple-hsc2hs-test/app/Lib.hs
+
+        # Try applying hsc2hs directly with the `cc` apparently used by Cabal (the library)
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --lflag=-L/lib --lflag=-L/usr/lib --lflag=-Wl,-R,/lib --lflag=-Wl,-R,/usr/lib --lflag=-lgmp --verbose --cc=${{ matrix.nix-cc }} --ld=${{ matrix.nix-cc }} simple-hsc2hs-test/app/Lib.hsc
+        # Tidy-up
+        rm simple-hsc2hs-test/app/Lib.hs
+
+        set +ex
+
+  # This job uses Stack to build simple-hsc2hs-test in a Docker container
+  test-hsc2hs-simple:
+    name: Test hsc2hs (simple)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - ghc: "9.2.7"
+          cabal-tmp-dir: ".stack-work/dist/x86_64-linux-dk4f31dc93c12465b48238129ec7324625/Cabal-3.6.3.0/build/simple-hsc2hs-test/simple-hsc2hs-test-tmp"
+        - ghc: "9.4.5"
           cabal-tmp-dir: ".stack-work/dist/x86_64-linux-dkbbc7701fbbddb5591b4899472412e28d/Cabal-3.8.1.0/build/simple-hsc2hs-test/simple-hsc2hs-test-tmp"
     steps:
     - name: Clone project
@@ -50,31 +104,57 @@ jobs:
         # subcommands that automatically launches in a Docker container.
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- cat /etc/os-release
         stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- apk list -I
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which hsc2hs
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --version
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- which cc
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- cc --version
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- ${{ matrix.nix-cc }} --version
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- ls -l /usr/lib
 
-        # Try applying hsc2hs directly
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --verbose simple-hsc2hs-test/app/Lib.hsc
-        # Tidy-up
-        rm simple-hsc2hs-test/app/Lib.hs
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --verbose --docker build simple-hsc2hs-test --cabal-verbosity=deafening
 
-        # Try applying hsc2hs directly with the `cc` apparently used by Cabal (the library)
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- hsc2hs --lflag=-L/lib --lflag=-L/usr/lib --lflag=-Wl,-R,/lib --lflag=-Wl,-R,/usr/lib --lflag=-lgmp --verbose --cc=${{ matrix.nix-cc }} --ld=${{ matrix.nix-cc }} simple-hsc2hs-test/app/Lib.hsc
-        # Tidy-up
-        rm simple-hsc2hs-test/app/Lib.hs
-
-        stack --verbose --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build simple-hsc2hs-test --cabal-verbosity=deafening
-
+        # Examine the C code
         cat simple-hsc2hs-test/${{ matrix.cabal-tmp-dir }}/Lib_hsc_make.c
         cat simple-hsc2hs-test/${{ matrix.cabal-tmp-dir }}/Lib_hsc_utils.c
 
-        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker build hsc2hs-test
+        set +ex
+
+  # This job uses Stack to build hsc2hs-test in a Docker container
+  test-hsc2hs:
+    name: Test hsc2hs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ghc:
+        - "9.2.7"
+        - "9.4.5"
+    steps:
+    - name: Clone project
+      uses: actions/checkout@v3
+    - name: Install and run
+      shell: bash
+      run: |
+        set -ex
+
+        mkdir -p ~/.stack
+        touch ~/.stack/config.yaml
+        cat > ~/.stack/config.yaml <<EOF
+        extra-include-dirs:
+        - /usr/include
+        extra-lib-dirs:
+        - /lib
+        - /usr/lib
+        # Options passed to Cabal (the library) during the `configure` step
+        configure-options:
+          hsc2hs-test:
+          - --hsc2hs-option=--verbose
+        EOF
+
+        # Understand the build environment. `stack exec` is one of the
+        # subcommands that automatically launches in a Docker container.
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- cat /etc/os-release
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --docker exec -- apk list -I
+
+        stack --stack-yaml stack-ghc-${{ matrix.ghc }}.yaml --verbose --docker build hsc2hs-test --cabal-verbosity=deafening
 
         set +ex
+
+  # This job uses Stack to build th-test in a Docker container
   test-th:
     name: Test TH
     runs-on: ubuntu-latest
